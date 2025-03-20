@@ -38,10 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'tasks',
     'corsheaders',
     'rest_framework_simplejwt',
-    'corsheaders',
+    'productivity',    
 ]
 
 MIDDLEWARE = [
