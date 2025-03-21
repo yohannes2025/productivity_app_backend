@@ -2,6 +2,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
+from .views import IndexView
 
 router = DefaultRouter()
 router.register(r'users', views.UserViewSet)
@@ -11,4 +12,5 @@ router.register(r'activities', views.ActivityViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('', IndexView.as_view(), name='index'),
 ]

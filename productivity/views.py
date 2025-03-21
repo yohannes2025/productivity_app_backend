@@ -3,6 +3,11 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from .models import User, Task, Comment, Activity
 from .serializers import UserSerializer, TaskSerializer, CommentSerializer, ActivitySerializer
+from django.views.generic import TemplateView
+
+
+class IndexView(TemplateView):
+    template_name = 'index.html'
 
 
 class UserViewSet(viewsets.ModelViewSet):
