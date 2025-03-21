@@ -1,52 +1,48 @@
 # views.py
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, status
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from .models import User, Task, Comment, Activity
 from .serializers import UserSerializer, TaskSerializer, CommentSerializer, ActivitySerializer
-from django.views.generic import TemplateView
-
-
-class IndexView(TemplateView):
-    template_name = 'index.html'
 
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-    def get_queryset(self):
-        queryset = self.queryset
-        status = self.request.query_params.get('status')
-        priority = self.request.query_params.get('priority')
-        category = self.request.query_params.get('category')
-        search = self.request.query_params.get('search')
+    def perform_update(self, serializer):
+        instance = self.get_object()
+        if instance.owner != self.request.user:
+            return Response({'error': 'You are not the owner of this task.'}, status=status.HTTP_403_FORBIDDEN)
+        serializer.save()
 
-        if status:
-            queryset = queryset.filter(status=status)
-        if priority:
-            queryset = queryset.filter(priority=priority)
-        if category:
-            queryset = queryset.filter(category=category)
-        if search:
-            queryset = queryset.filter(title__icontains=search)
-
-        return queryset
+    def perform_destroy(self, instance):
+        if instance.owner != self.request.user:
+            return Response({'error': 'You are not the owner of this task.'}, status=status.HTTP_403_FORBIDDEN)
+        instance.delete()
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -55,13 +51,4 @@ class CommentViewSet(viewsets.ModelViewSet):
 class ActivityViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Activity.objects.all()
     serializer_class = ActivitySerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        queryset = self.queryset
-        task_id = self.request.query_params.get('task_id')
-
-        if task_id:
-            queryset = queryset.filter(task_id=task_id)
-
-        return queryset
+    permission_classes = [IsAuthenticated]
